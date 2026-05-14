@@ -8,14 +8,14 @@ from app.indicators.technical import moving_average, rate_of_change
 class ScoringService:
     def classify_score(self, score: float) -> str:
         if score >= 85:
-            return "Strong Watch"
+            return "强关注"
         if score >= 70:
-            return "Watch"
+            return "可观察"
         if score >= 55:
-            return "Neutral"
+            return "中性观望"
         if score >= 40:
-            return "High Risk"
-        return "Avoid"
+            return "风险偏高"
+        return "暂不建议"
 
     def score_a_share(self, symbol: str, prices: pd.DataFrame) -> AnalysisSummary:
         if len(prices) < 60:
@@ -23,9 +23,9 @@ class ScoringService:
             return AnalysisSummary(
                 symbol=symbol,
                 score=score,
-                conclusion="Insufficient Data",
+                conclusion="数据不足",
                 reasons=[],
-                risks=["At least 60 trading days are required for the first analysis."],
+                risks=["至少需要 60 个交易日数据才能生成第一版分析。"],
                 metrics={"price_count": len(prices)},
             )
 
@@ -45,9 +45,12 @@ class ScoringService:
         technical_score = self._score_technical(latest_close, ma20, ma60, ma120)
         momentum_score = self._score_momentum(return_20d, return_60d)
         risk_score = self._score_risk(drawdown, volatility)
-        total = round(technical_score + momentum_score + risk_score, 2)
+        raw_total = round(technical_score + momentum_score + risk_score, 2)
+        total = round(raw_total / 60 * 100, 2)
         score = ScoreBreakdown(
             total=total,
+            raw_total=raw_total,
+            raw_max_score=60,
             technical=technical_score,
             momentum=momentum_score,
             risk=risk_score,
@@ -134,17 +137,17 @@ class ScoringService:
     ) -> list[str]:
         reasons: list[str] = []
         if latest_close > ma20:
-            reasons.append("Price is above the 20-day moving average.")
+            reasons.append("股价站上 20 日均线，短线趋势偏强。")
         if latest_close > ma60:
-            reasons.append("Price is above the 60-day moving average.")
+            reasons.append("股价站上 60 日均线，中期趋势没有明显走坏。")
         if ma20 > ma60:
-            reasons.append("20-day moving average is above the 60-day moving average.")
+            reasons.append("20 日均线高于 60 日均线，短中期均线结构偏积极。")
         if ma120 is not None and latest_close > ma120:
-            reasons.append("Price is above the 120-day moving average.")
+            reasons.append("股价站上 120 日均线，长期趋势有支撑。")
         if return_20d > 0:
-            reasons.append("20-day momentum is positive.")
+            reasons.append("近 20 个交易日收益为正。")
         if return_60d > 0:
-            reasons.append("60-day momentum is positive.")
+            reasons.append("近 60 个交易日收益为正。")
         return reasons
 
     def _build_risks(
@@ -156,11 +159,11 @@ class ScoringService:
     ) -> list[str]:
         risks: list[str] = []
         if latest_close < ma60:
-            risks.append("Price is below the 60-day moving average.")
+            risks.append("股价低于 60 日均线，中期趋势偏弱。")
         if drawdown < -0.25:
-            risks.append("Historical drawdown over the lookback window is large.")
+            risks.append("回看区间内最大回撤较大，需要控制仓位。")
         if volatility > 0.4:
-            risks.append("Annualized volatility is high.")
+            risks.append("年化波动率偏高，价格波动风险较大。")
         if not risks:
-            risks.append("No major trend or volatility risk was triggered by the first rule set.")
+            risks.append("第一版规则未触发明显趋势或波动风险，但仍需结合基本面和估值。")
         return risks

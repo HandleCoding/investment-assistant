@@ -29,4 +29,6 @@ def test_score_a_share_returns_summary() -> None:
     assert result.symbol == "000001"
     assert result.score.total > 0
     assert result.metrics["price_count"] == 130
-    assert result.conclusion in {"Avoid", "High Risk", "Neutral", "Watch", "Strong Watch"}
+    assert result.conclusion in {"暂不建议", "风险偏高", "中性观望", "可观察", "强关注"}
+    assert result.score.max_score == 100
+    assert result.score.raw_max_score == 60

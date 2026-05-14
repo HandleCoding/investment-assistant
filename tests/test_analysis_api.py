@@ -56,3 +56,20 @@ def test_analyze_a_share_api(db_session) -> None:
     body = response.json()
     assert body["symbol"] == "000001"
     assert body["metrics"]["price_count"] == 130
+
+
+def test_analyze_a_share_report_api(db_session) -> None:
+    def override_analysis_service():
+        price_service = PriceService(db_session, data_client=FakeDataClient())
+        return AnalysisService(db_session, price_service=price_service)
+
+    app.dependency_overrides[get_analysis_service] = override_analysis_service
+
+    try:
+        response = TestClient(app).get("/analysis/a-share/000001/report")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert "A 股分析报告" in response.text
+    assert "综合结论" in response.text

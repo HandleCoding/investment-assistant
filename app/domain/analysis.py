@@ -4,6 +4,9 @@ from dataclasses import asdict, dataclass
 @dataclass(frozen=True)
 class ScoreBreakdown:
     total: float
+    max_score: float = 100
+    raw_total: float | None = None
+    raw_max_score: float | None = None
     fundamental: float = 0
     valuation: float = 0
     technical: float = 0
