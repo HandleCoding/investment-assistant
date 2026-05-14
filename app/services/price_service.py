@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.data_sources.akshare_client import AkShareClient
 from app.data_sources.normalizers import normalize_a_share_prices, price_bars_to_frame
 from app.database.models import Asset, AssetType, Market, PriceDaily
+from app.domain.errors import NoMarketDataError
 from app.domain.market_data import PriceBar
 
 
@@ -42,12 +43,17 @@ class PriceService:
                 adjust,
             )
             fetched_bars = normalize_a_share_prices(raw_prices)
+            if not fetched_bars:
+                raise NoMarketDataError(f"未获取到 {symbol} 的 A 股行情数据。")
             self._upsert_prices(asset.id, fetched_bars, adjust)
             cached_bars = self._list_cached_prices(
                 asset_id=asset.id,
                 start_date=start_date,
                 adjust=adjust,
             )
+
+        if not cached_bars:
+            raise NoMarketDataError(f"本地没有 {symbol} 的可用 A 股行情数据。")
 
         return price_bars_to_frame(cached_bars)
 

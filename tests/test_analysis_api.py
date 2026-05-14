@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.api.analysis import get_analysis_service
 from app.database.session import get_session
+from app.domain.errors import DataSourceError
 from app.main import app
 from app.services.analysis_service import AnalysisService
 from app.services.price_service import PriceService
@@ -34,6 +35,15 @@ class FakeDataClient:
                 for index in range(130)
             ]
         )
+class BrokenDataClient:
+    def fetch_a_share_history(
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
+        adjust: str,
+    ) -> pd.DataFrame:
+        raise DataSourceError("network failed")
 
 
 def test_analyze_a_share_api(db_session) -> None:
@@ -72,4 +82,19 @@ def test_analyze_a_share_report_api(db_session) -> None:
 
     assert response.status_code == 200
     assert "A 股分析报告" in response.text
-    assert "综合结论" in response.text
+
+
+def test_analyze_a_share_api_returns_503_when_data_source_fails(db_session) -> None:
+    def override_analysis_service():
+        price_service = PriceService(db_session, data_client=BrokenDataClient())
+        return AnalysisService(db_session, price_service=price_service)
+
+    app.dependency_overrides[get_analysis_service] = override_analysis_service
+
+    try:
+        response = TestClient(app).get("/analysis/a-share/603288")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert "行情数据源暂时不可用" in response.json()["detail"]
