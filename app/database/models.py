@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 
 from sqlalchemy import Date, DateTime, Float, ForeignKey, String, Text, UniqueConstraint
@@ -32,8 +32,8 @@ class Asset(Base):
     asset_type: Mapped[str] = mapped_column(String(32), index=True)
     industry: Mapped[str | None] = mapped_column(String(128))
     status: Mapped[str] = mapped_column(String(32), default="ACTIVE")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     prices: Mapped[list["PriceDaily"]] = relationship(back_populates="asset")
 
@@ -58,7 +58,9 @@ class PriceDaily(Base):
 
     asset: Mapped[Asset] = relationship(back_populates="prices")
 
-    __table_args__ = (UniqueConstraint("asset_id", "trade_date", "adjust_type", name="uq_price_daily"),)
+    __table_args__ = (
+        UniqueConstraint("asset_id", "trade_date", "adjust_type", name="uq_price_daily"),
+    )
 
 
 class FundNavDaily(Base):

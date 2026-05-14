@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 
 @dataclass(frozen=True)
@@ -18,3 +18,7 @@ class AnalysisSummary:
     conclusion: str
     reasons: list[str]
     risks: list[str]
+    metrics: dict[str, float | int | str | None]
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
