@@ -35,6 +35,49 @@ class FakeDataClient:
                 for index in range(130)
             ]
         )
+
+    def fetch_a_share_history_tx(
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
+        adjust: str,
+    ) -> pd.DataFrame:
+        return self.fetch_a_share_history(symbol, start_date, end_date, adjust)
+
+
+class FallbackDataClient:
+    def fetch_a_share_history(
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
+        adjust: str,
+    ) -> pd.DataFrame:
+        raise DataSourceError("primary failed")
+
+    def fetch_a_share_history_tx(
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
+        adjust: str,
+    ) -> pd.DataFrame:
+        return pd.DataFrame(
+            [
+                {
+                    "date": start_date + timedelta(days=index),
+                    "open": 10 + index * 0.1,
+                    "high": 10 + index * 0.1,
+                    "low": 10 + index * 0.1,
+                    "close": 10 + index * 0.1,
+                    "amount": 1000,
+                }
+                for index in range(130)
+            ]
+        )
+
+
 class BrokenDataClient:
     def fetch_a_share_history(
         self,
@@ -43,7 +86,16 @@ class BrokenDataClient:
         end_date: date,
         adjust: str,
     ) -> pd.DataFrame:
-        raise DataSourceError("network failed")
+        raise DataSourceError("primary failed")
+
+    def fetch_a_share_history_tx(
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
+        adjust: str,
+    ) -> pd.DataFrame:
+        raise DataSourceError("fallback failed")
 
 
 def test_analyze_a_share_api(db_session) -> None:
@@ -84,7 +136,20 @@ def test_analyze_a_share_report_api(db_session) -> None:
     assert "A 股分析报告" in response.text
 
 
-def test_analyze_a_share_api_returns_503_when_data_source_fails(db_session) -> None:
+def test_analyze_a_share_api_uses_fallback_source(db_session) -> None:
+    def override_analysis_service():
+        price_service = PriceService(db_session, data_client=FallbackDataClient())
+        return AnalysisService(db_session, price_service=price_service)
+
+    app.dependency_overrides[get_analysis_service] = override_analysis_service
+
+    try:
+        response = TestClient(app).get("/analysis/a-share/000592")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["metrics"]["price_count"] == 130
     def override_analysis_service():
         price_service = PriceService(db_session, data_client=BrokenDataClient())
         return AnalysisService(db_session, price_service=price_service)

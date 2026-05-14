@@ -14,6 +14,15 @@ A_SHARE_PRICE_COLUMNS = {
     "涨跌幅": "pct_change",
 }
 
+A_SHARE_TX_PRICE_COLUMNS = {
+    "date": "trade_date",
+    "open": "open",
+    "high": "high",
+    "low": "low",
+    "close": "close",
+    "amount": "volume",
+}
+
 
 def normalize_a_share_prices(raw_prices: pd.DataFrame) -> list[PriceBar]:
     if raw_prices.empty:
@@ -35,6 +44,28 @@ def normalize_a_share_prices(raw_prices: pd.DataFrame) -> list[PriceBar]:
                 amount=_optional_float(row.get("amount")),
                 turnover_rate=_optional_float(row.get("turnover_rate")),
                 pct_change=_optional_float(row.get("pct_change")),
+            )
+        )
+    return bars
+
+
+def normalize_a_share_tx_prices(raw_prices: pd.DataFrame) -> list[PriceBar]:
+    if raw_prices.empty:
+        return []
+
+    frame = raw_prices.rename(columns=A_SHARE_TX_PRICE_COLUMNS)
+    frame["trade_date"] = pd.to_datetime(frame["trade_date"]).dt.date
+
+    bars: list[PriceBar] = []
+    for row in frame.to_dict(orient="records"):
+        bars.append(
+            PriceBar(
+                trade_date=row["trade_date"],
+                open=_optional_float(row.get("open")),
+                high=_optional_float(row.get("high")),
+                low=_optional_float(row.get("low")),
+                close=_optional_float(row.get("close")),
+                volume=_optional_float(row.get("volume")),
             )
         )
     return bars

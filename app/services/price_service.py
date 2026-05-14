@@ -5,9 +5,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.data_sources.akshare_client import AkShareClient
-from app.data_sources.normalizers import normalize_a_share_prices, price_bars_to_frame
+from app.data_sources.normalizers import (
+    normalize_a_share_prices,
+    normalize_a_share_tx_prices,
+    price_bars_to_frame,
+)
 from app.database.models import Asset, AssetType, Market, PriceDaily
-from app.domain.errors import NoMarketDataError
+from app.domain.errors import DataSourceError, NoMarketDataError
 from app.domain.market_data import PriceBar
 
 
@@ -36,13 +40,7 @@ class PriceService:
             adjust=adjust,
         )
         if not cached_bars or cached_bars[-1].trade_date < end_date - timedelta(days=3):
-            raw_prices = self.data_client.fetch_a_share_history(
-                symbol,
-                start_date,
-                end_date,
-                adjust,
-            )
-            fetched_bars = normalize_a_share_prices(raw_prices)
+            fetched_bars = self._fetch_a_share_bars(symbol, start_date, end_date, adjust)
             if not fetched_bars:
                 raise NoMarketDataError(f"未获取到 {symbol} 的 A 股行情数据。")
             self._upsert_prices(asset.id, fetched_bars, adjust)
@@ -56,6 +54,34 @@ class PriceService:
             raise NoMarketDataError(f"本地没有 {symbol} 的可用 A 股行情数据。")
 
         return price_bars_to_frame(cached_bars)
+
+    def _fetch_a_share_bars(
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
+        adjust: str,
+    ) -> list[PriceBar]:
+        try:
+            raw_prices = self.data_client.fetch_a_share_history(
+                symbol,
+                start_date,
+                end_date,
+                adjust,
+            )
+            return normalize_a_share_prices(raw_prices)
+        except DataSourceError as primary_error:
+            try:
+                raw_prices = self.data_client.fetch_a_share_history_tx(
+                    symbol,
+                    start_date,
+                    end_date,
+                    adjust,
+                )
+                return normalize_a_share_tx_prices(raw_prices)
+            except DataSourceError as fallback_error:
+                message = f"{primary_error}；备用腾讯源也失败：{fallback_error}"
+                raise DataSourceError(message) from fallback_error
 
     def _get_or_create_asset(self, symbol: str, market: Market, asset_type: AssetType) -> Asset:
         statement = select(Asset).where(Asset.symbol == symbol, Asset.market == market.value)
