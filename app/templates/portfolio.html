@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}持仓 - 投资助手{% endblock %}
+{% block page_title %}持仓管理{% endblock %}
+
+{% block content %}
+<section class="grid grid-4">
+  {% for card in summary_cards %}
+  <article class="card metric-card">
+    <div class="card-label">{{ card.title }}</div>
+    <div class="metric-value">{{ card.value }}</div>
+    <div class="metric-change {{ card.tone }}">{{ card.change }}</div>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="grid grid-3 section-gap">
+  {% for item in allocation %}
+  <article class="card allocation-card">
+    <div class="card-label">{{ item.title }}</div>
+    <div class="allocation-value">{{ item.value }}</div>
+    <p>{{ item.change }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="portfolio-layout section-gap">
+  <article class="card">
+    <div class="section-header">
+      <div>
+        <div class="section-title">持仓列表</div>
+        <p>后续会接入真实持仓录入、盈亏和仓位计算。</p>
+      </div>
+      <button class="ghost-button">新增持仓</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>代码</th><th>名称</th><th>市场</th><th>数量</th><th>成本价</th><th>现价</th><th>盈亏</th><th>仓位</th><th>纪律状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in positions %}
+          <tr>
+            <td>{{ item.symbol }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.market }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.cost_price }}</td>
+            <td>{{ item.last_price }}</td>
+            <td>{{ item.pnl }}</td>
+            <td>{{ item.weight }}</td>
+            <td>{{ item.rule_status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <aside class="card">
+    <div class="section-title">风险提醒</div>
+    <div class="alert-list">
+      {% for alert in alerts %}
+      <div class="alert-item {{ alert.tone }}">
+        <strong>{{ alert.title }}</strong>
+        <span>{{ alert.description }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+{% endblock %}

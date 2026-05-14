@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}候选池 - 投资助手{% endblock %}
+{% block page_title %}今日候选观察池{% endblock %}
+
+{% block content %}
+<section class="card filter-card">
+  <div class="section-title">筛选条件</div>
+  <div class="filter-pills">
+    {% for item in filters %}<span>{{ item }}</span>{% endfor %}
+  </div>
+</section>
+
+<section class="candidate-layout section-gap">
+  <article class="card">
+    <div class="section-header">
+      <div>
+        <div class="section-title">候选资产</div>
+        <p>当前为页面原型数据，后续接入真实候选池服务。</p>
+      </div>
+      <button class="ghost-button">刷新候选池</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>代码</th><th>名称</th><th>市场</th><th>评分</th><th>结论</th><th>近20日</th><th>最大回撤</th><th>关键理由</th><th>风险</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in candidates %}
+          <tr>
+            <td>{{ item.symbol }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.market }}</td>
+            <td><span class="score-pill">{{ item.score }}</span></td>
+            <td>{{ item.conclusion }}</td>
+            <td>{{ item.return_20d }}</td>
+            <td>{{ item.max_drawdown }}</td>
+            <td>{{ item.reason }}</td>
+            <td>{{ item.risk }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <aside class="card strategy-card">
+    <div class="section-title">当前筛选策略</div>
+    <p>优先选择趋势结构未走坏、回撤可控、流动性较好的观察标的。</p>
+    <div class="rule-list">
+      <span>价格接近或站上 60 日均线</span>
+      <span>近 20/60 日动量改善</span>
+      <span>最大回撤不过度扩大</span>
+      <span>排除明显高风险标的</span>
+    </div>
+  </aside>
+</section>
+{% endblock %}

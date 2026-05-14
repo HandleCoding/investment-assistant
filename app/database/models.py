@@ -1,7 +1,7 @@
 from datetime import UTC, date, datetime
 from enum import StrEnum
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
@@ -90,3 +90,66 @@ class AnalysisReport(Base):
     score_risk: Mapped[float | None] = mapped_column(Float)
     conclusion: Mapped[str | None] = mapped_column(String(64))
     reasons_json: Mapped[str | None] = mapped_column(Text)
+
+
+class CandidateEntry(Base):
+    __tablename__ = "candidate_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id"), index=True)
+    generated_at: Mapped[date] = mapped_column(Date, index=True)
+    score: Mapped[float] = mapped_column(Float)
+    conclusion: Mapped[str] = mapped_column(String(64))
+    return_20d: Mapped[float | None] = mapped_column(Float)
+    max_drawdown: Mapped[float | None] = mapped_column(Float)
+    reason: Mapped[str | None] = mapped_column(Text)
+    risk: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="WATCHING")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+
+    asset: Mapped[Asset] = relationship()
+
+    __table_args__ = (
+        UniqueConstraint("asset_id", "generated_at", name="uq_candidate_asset_generated_at"),
+    )
+
+
+class PortfolioPosition(Base):
+    __tablename__ = "portfolio_positions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id"), index=True)
+    quantity: Mapped[float] = mapped_column(Float)
+    cost_price: Mapped[float] = mapped_column(Float)
+    last_price: Mapped[float | None] = mapped_column(Float)
+    stop_loss_price: Mapped[float | None] = mapped_column(Float)
+    take_profit_price: Mapped[float | None] = mapped_column(Float)
+    opened_at: Mapped[date | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(32), default="OPEN")
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+
+    asset: Mapped[Asset] = relationship()
+
+    __table_args__ = (UniqueConstraint("asset_id", "status", name="uq_open_position_asset_status"),)
+
+
+class BacktestRun(Base):
+    __tablename__ = "backtest_runs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id"), index=True)
+    strategy_name: Mapped[str] = mapped_column(String(64))
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[date] = mapped_column(Date)
+    initial_cash: Mapped[float] = mapped_column(Float)
+    final_value: Mapped[float] = mapped_column(Float)
+    total_return: Mapped[float] = mapped_column(Float)
+    max_drawdown: Mapped[float] = mapped_column(Float)
+    trade_count: Mapped[int] = mapped_column(Integer)
+    win_rate: Mapped[float] = mapped_column(Float)
+    trades_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+
+    asset: Mapped[Asset] = relationship()

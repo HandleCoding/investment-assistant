@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}资产分析 - 投资助手{% endblock %}
+{% block page_title %}资产分析{% endblock %}
+
+{% block content %}
+<section class="card analysis-hero">
+  <form class="analysis-form" action="/analysis" method="get">
+    <div>
+      <label>市场</label>
+      <select name="market">
+        <option value="a-share" {% if market == 'a-share' %}selected{% endif %}>A 股</option>
+        <option value="hk" {% if market == 'hk' %}selected{% endif %}>港股</option>
+      </select>
+    </div>
+    <div>
+      <label>代码</label>
+      <input name="symbol" value="{{ symbol }}" placeholder="000001 / HK0700">
+    </div>
+    <button type="submit">生成分析</button>
+  </form>
+</section>
+
+{% if error %}
+<section class="card error-card">
+  <div class="section-title">行情数据暂时不可用</div>
+  <p>{{ error }}</p>
+</section>
+{% elif summary %}
+<section class="analysis-layout section-gap">
+  <div class="analysis-main">
+    <article class="card asset-header-card">
+      <div>
+        <div class="eyebrow">{{ '港股' if market == 'hk' else 'A 股' }}</div>
+        <h2>{{ summary.symbol }}</h2>
+        <p>基于最近 {{ summary.metrics.price_count }} 条价格数据生成。</p>
+      </div>
+      <div class="price-box">
+        <span>最新收盘价</span>
+        <strong>{{ summary.metrics.latest_close }}</strong>
+      </div>
+    </article>
+
+    <article class="card chart-card">
+      <div class="section-header">
+        <div>
+          <div class="section-title">价格趋势</div>
+          <p>第一版先展示关键均线结构，后续接入真实 K 线图。</p>
+        </div>
+      </div>
+      <div class="trend-placeholder">
+        <div class="trend-line line-1"></div>
+        <div class="trend-line line-2"></div>
+        <div class="trend-line line-3"></div>
+      </div>
+      <div class="indicator-grid">
+        <div><span>20 日均线</span><strong>{{ summary.metrics.ma20 }}</strong></div>
+        <div><span>60 日均线</span><strong>{{ summary.metrics.ma60 }}</strong></div>
+        <div><span>120 日均线</span><strong>{{ summary.metrics.ma120 }}</strong></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-title">核心指标</div>
+      <div class="metric-grid">
+        <div><span>近20日收益</span><strong>{{ '%.2f%%' | format(summary.metrics.return_20d * 100) }}</strong></div>
+        <div><span>近60日收益</span><strong>{{ '%.2f%%' | format(summary.metrics.return_60d * 100) }}</strong></div>
+        <div><span>最大回撤</span><strong>{{ '%.2f%%' | format(summary.metrics.max_drawdown * 100) }}</strong></div>
+        <div><span>年化波动率</span><strong>{{ '%.2f%%' | format(summary.metrics.annualized_volatility * 100) }}</strong></div>
+      </div>
+    </article>
+  </div>
+
+  <aside class="analysis-side">
+    <article class="card conclusion-card">
+      <div class="conclusion-label">综合结论</div>
+      <div class="conclusion-value">{{ summary.conclusion }}</div>
+      <div class="score-ring">
+        <span>{{ '%.0f' | format(summary.score.total) }}</span>
+        <small>/100</small>
+      </div>
+      <p>当前为技术面 MVP 评分，尚未纳入估值和财务。</p>
+    </article>
+
+    <article class="card">
+      <div class="section-title">评分拆解</div>
+      <div class="score-bars">
+        <div><span>趋势</span><div><i style="width: {{ summary.score.technical / 20 * 100 }}%"></i></div><em>{{ summary.score.technical }}/20</em></div>
+        <div><span>动量</span><div><i style="width: {{ summary.score.momentum / 20 * 100 }}%"></i></div><em>{{ summary.score.momentum }}/20</em></div>
+        <div><span>风险</span><div><i style="width: {{ summary.score.risk / 20 * 100 }}%"></i></div><em>{{ summary.score.risk }}/20</em></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-title">积极因素</div>
+      <ul class="clean-list positive-list">
+        {% for reason in summary.reasons %}<li>{{ reason }}</li>{% endfor %}
+      </ul>
+    </article>
+
+    <article class="card">
+      <div class="section-title">风险提示</div>
+      <ul class="clean-list risk-list">
+        {% for risk in summary.risks %}<li>{{ risk }}</li>{% endfor %}
+      </ul>
+    </article>
+  </aside>
+</section>
+{% endif %}
+{% endblock %}

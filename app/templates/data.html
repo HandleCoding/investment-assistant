@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}数据管理 - 投资助手{% endblock %}
+{% block page_title %}数据管理{% endblock %}
+
+{% block content %}
+<section class="grid grid-4">
+  {% for card in summary_cards %}
+  <article class="card metric-card">
+    <div class="card-label">{{ card.title }}</div>
+    <div class="metric-value">{{ card.value }}</div>
+    <div class="metric-change {{ card.tone }}">{{ card.change }}</div>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="card section-gap">
+  <div class="section-header">
+    <div>
+      <div class="section-title">行情缓存覆盖</div>
+      <p>来自后端数据管理服务，用于检查资产和本地缓存是否完整。</p>
+    </div>
+    <a class="link-button" href="/api/data/health">查看 JSON</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>代码</th><th>市场</th><th>类型</th><th>缓存条数</th><th>最早日期</th><th>最新日期</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in coverage %}
+        <tr>
+          <td>{{ item.symbol }}</td>
+          <td>{{ item.market }}</td>
+          <td>{{ item.asset_type }}</td>
+          <td>{{ item.price_count }}</td>
+          <td>{{ item.first_trade_date or '--' }}</td>
+          <td>{{ item.last_trade_date or '--' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}投资助手{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">IA</div>
+        <div>
+          <div class="brand-title">投资助手</div>
+          <div class="brand-subtitle">Personal Research</div>
+        </div>
+      </div>
+      <nav class="side-nav">
+        <a class="nav-item {% if active_page == 'dashboard' %}active{% endif %}" href="/">Dashboard</a>
+        <a class="nav-item {% if active_page == 'analysis' %}active{% endif %}" href="/analysis">资产分析</a>
+        <a class="nav-item {% if active_page == 'candidates' %}active{% endif %}" href="/candidates">候选池</a>
+        <a class="nav-item {% if active_page == 'portfolio' %}active{% endif %}" href="/portfolio">持仓</a>
+        <a class="nav-item {% if active_page == 'backtests' %}active{% endif %}" href="/backtests">回测</a>
+        <a class="nav-item {% if active_page == 'data' %}active{% endif %}" href="/data">数据管理</a>
+      </nav>
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">系统状态</div>
+        <div class="status-dot"></div>
+        <span>本地 SQLite 缓存</span>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Personal Investment Assistant</div>
+          <h1>{% block page_title %}{% endblock %}</h1>
+        </div>
+        <form class="top-search" action="/analysis" method="get">
+          <select name="market">
+            <option value="a-share">A 股</option>
+            <option value="hk">港股</option>
+          </select>
+          <input name="symbol" placeholder="输入 000001 / HK0700" value="">
+          <button type="submit">分析</button>
+        </form>
+      </header>
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

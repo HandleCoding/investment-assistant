@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}回测 - 投资助手{% endblock %}
+{% block page_title %}策略回测{% endblock %}
+
+{% block content %}
+<section class="card analysis-card">
+  <div class="section-header">
+    <div>
+      <div class="section-title">均线交叉回测</div>
+      <p>后端已提供真实回测 API：提交参数后调用 <code>/api/backtests/ma-cross</code>。</p>
+    </div>
+  </div>
+  <form class="analysis-form" action="/api/backtests/ma-cross" method="post">
+    <label>市场
+      <select name="market">
+        <option value="{{ default_market }}">A 股</option>
+        <option value="HK">港股</option>
+      </select>
+    </label>
+    <label>代码
+      <input name="symbol" value="{{ default_symbol }}">
+    </label>
+    <label>初始资金
+      <input name="initial_cash" value="{{ default_initial_cash }}">
+    </label>
+    <label>快线
+      <input name="fast_window" value="{{ default_fast_window }}">
+    </label>
+    <label>慢线
+      <input name="slow_window" value="{{ default_slow_window }}">
+    </label>
+  </form>
+</section>
+
+<section class="grid grid-3 section-gap">
+  <article class="card allocation-card">
+    <div class="card-label">策略</div>
+    <div class="allocation-value">MA Cross</div>
+    <p>20/60 日均线金叉买入，死叉卖出。</p>
+  </article>
+  <article class="card allocation-card">
+    <div class="card-label">指标</div>
+    <div class="allocation-value">收益 / 回撤</div>
+    <p>输出总收益、最大回撤、交易次数与胜率。</p>
+  </article>
+  <article class="card allocation-card">
+    <div class="card-label">持久化</div>
+    <div class="allocation-value">SQLite</div>
+    <p>每次运行保存为 backtest_runs 记录。</p>
+  </article>
+</section>
+{% endblock %}

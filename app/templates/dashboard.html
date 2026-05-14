@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - 投资助手{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="grid grid-4">
+  {% for card in market_cards %}
+  <article class="card metric-card">
+    <div class="card-label">{{ card.title }}</div>
+    <div class="metric-value">{{ card.value }}</div>
+    <div class="metric-change {{ card.tone }}">{{ card.change }}</div>
+    <div class="sparkline {{ card.tone }}"></div>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="grid grid-2 section-gap">
+  <article class="card large-card">
+    <div class="section-title">组合概览</div>
+    <div class="portfolio-summary">
+      {% for card in portfolio_cards %}
+      <div>
+        <div class="card-label">{{ card.title }}</div>
+        <div class="metric-value">{{ card.value }}</div>
+        <div class="metric-change {{ card.tone }}">{{ card.change }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="equity-curve"></div>
+  </article>
+
+  <article class="card large-card">
+    <div class="section-title">今日风险提醒</div>
+    <div class="alert-list">
+      {% for alert in alerts %}
+      <div class="alert-item {{ alert.tone }}">
+        <strong>{{ alert.title }}</strong>
+        <span>{{ alert.description }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="card section-gap">
+  <div class="section-header">
+    <div>
+      <div class="section-title">今日候选观察</div>
+      <p>先作为观察池，不等同于买入建议。</p>
+    </div>
+    <a class="link-button" href="/candidates">查看全部</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>代码</th><th>名称</th><th>市场</th><th>评分</th><th>结论</th><th>近20日</th><th>最大回撤</th><th>关键理由</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in candidates %}
+        <tr>
+          <td>{{ item.symbol }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.market }}</td>
+          <td><span class="score-pill">{{ item.score }}</span></td>
+          <td>{{ item.conclusion }}</td>
+          <td>{{ item.return_20d }}</td>
+          <td>{{ item.max_drawdown }}</td>
+          <td>{{ item.reason }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

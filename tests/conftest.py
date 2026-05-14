@@ -3,7 +3,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.database.models import Asset, PriceDaily
+from app.database.models import (
+    Asset,
+    BacktestRun,
+    CandidateEntry,
+    PortfolioPosition,
+    PriceDaily,
+)
 from app.database.session import Base
 
 
@@ -14,7 +20,16 @@ def db_session():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    Base.metadata.create_all(bind=engine, tables=[Asset.__table__, PriceDaily.__table__])
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[
+            Asset.__table__,
+            PriceDaily.__table__,
+            CandidateEntry.__table__,
+            PortfolioPosition.__table__,
+            BacktestRun.__table__,
+        ],
+    )
     session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     with session_factory() as session:
         yield session
