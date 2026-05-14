@@ -54,7 +54,7 @@ class AkShareClient:
     ) -> pd.DataFrame:
         try:
             return ak.stock_hk_hist(
-                symbol=symbol,
+                symbol=_hk_symbol(symbol),
                 period="daily",
                 start_date=start_date.strftime("%Y%m%d"),
                 end_date=end_date.strftime("%Y%m%d"),
@@ -62,6 +62,12 @@ class AkShareClient:
             )
         except RequestException as exc:
             raise DataSourceError(f"AkShare 获取港股行情失败：{exc}") from exc
+
+    def fetch_hk_stock_daily_sina(self, symbol: str, adjust: str = "qfq") -> pd.DataFrame:
+        try:
+            return ak.stock_hk_daily(symbol=_hk_symbol(symbol), adjust=adjust)
+        except RequestException as exc:
+            raise DataSourceError(f"AkShare 获取新浪港股行情失败：{exc}") from exc
 
     def fetch_hk_fund_history(self, code: str) -> pd.DataFrame:
         try:
@@ -76,3 +82,8 @@ def _a_share_symbol_with_market(symbol: str) -> str:
     if symbol.startswith(("6", "9")):
         return f"sh{symbol}"
     return f"sz{symbol}"
+
+
+def _hk_symbol(symbol: str) -> str:
+    normalized = symbol.upper().removeprefix("HK")
+    return normalized.zfill(5)

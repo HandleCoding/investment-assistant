@@ -8,6 +8,7 @@ from app.data_sources.akshare_client import AkShareClient
 from app.data_sources.normalizers import (
     normalize_a_share_prices,
     normalize_a_share_tx_prices,
+    normalize_hk_daily_prices,
     price_bars_to_frame,
 )
 from app.database.models import Asset, AssetType, Market, PriceDaily
@@ -34,24 +35,49 @@ class PriceService:
         end_date = date.today()
         start_date = end_date - timedelta(days=lookback_days)
 
-        cached_bars = self._list_cached_prices(
-            asset_id=asset.id,
-            start_date=start_date,
-            adjust=adjust,
-        )
+        cached_bars = self._list_cached_prices(asset.id, start_date, adjust)
         if not cached_bars or cached_bars[-1].trade_date < end_date - timedelta(days=3):
             fetched_bars = self._fetch_a_share_bars(symbol, start_date, end_date, adjust)
             if not fetched_bars:
                 raise NoMarketDataError(f"未获取到 {symbol} 的 A 股行情数据。")
             self._upsert_prices(asset.id, fetched_bars, adjust)
-            cached_bars = self._list_cached_prices(
-                asset_id=asset.id,
-                start_date=start_date,
-                adjust=adjust,
-            )
+            cached_bars = self._list_cached_prices(asset.id, start_date, adjust)
 
         if not cached_bars:
             raise NoMarketDataError(f"本地没有 {symbol} 的可用 A 股行情数据。")
+
+        return price_bars_to_frame(cached_bars)
+
+    def get_hk_stock_history(
+        self,
+        symbol: str,
+        lookback_days: int = 420,
+        adjust: str = "qfq",
+    ) -> pd.DataFrame:
+        normalized_symbol = normalize_hk_symbol(symbol)
+        asset = self._get_or_create_asset(
+            symbol=normalized_symbol,
+            market=Market.HK,
+            asset_type=AssetType.STOCK,
+        )
+        end_date = date.today()
+        start_date = end_date - timedelta(days=lookback_days)
+
+        cached_bars = self._list_cached_prices(asset.id, start_date, adjust)
+        if not cached_bars or cached_bars[-1].trade_date < end_date - timedelta(days=3):
+            raw_prices = self.data_client.fetch_hk_stock_daily_sina(normalized_symbol, adjust)
+            fetched_bars = [
+                bar
+                for bar in normalize_hk_daily_prices(raw_prices)
+                if start_date <= bar.trade_date <= end_date
+            ]
+            if not fetched_bars:
+                raise NoMarketDataError(f"未获取到 {normalized_symbol} 的港股行情数据。")
+            self._upsert_prices(asset.id, fetched_bars, adjust)
+            cached_bars = self._list_cached_prices(asset.id, start_date, adjust)
+
+        if not cached_bars:
+            raise NoMarketDataError(f"本地没有 {normalized_symbol} 的可用港股行情数据。")
 
         return price_bars_to_frame(cached_bars)
 
@@ -149,3 +175,7 @@ class PriceService:
                 )
             )
         self.session.commit()
+
+
+def normalize_hk_symbol(symbol: str) -> str:
+    return symbol.upper().removeprefix("HK").zfill(5)

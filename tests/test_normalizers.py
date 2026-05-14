@@ -2,7 +2,11 @@ from datetime import date
 
 import pandas as pd
 
-from app.data_sources.normalizers import normalize_a_share_prices, normalize_a_share_tx_prices
+from app.data_sources.normalizers import (
+    normalize_a_share_prices,
+    normalize_a_share_tx_prices,
+    normalize_hk_daily_prices,
+)
 
 
 def test_normalize_a_share_prices() -> None:
@@ -49,3 +53,27 @@ def test_normalize_a_share_tx_prices() -> None:
     assert result[0].trade_date == date(2026, 1, 2)
     assert result[0].close == 10.5
     assert result[0].volume == 1000
+
+
+def test_normalize_hk_daily_prices() -> None:
+    raw_prices = pd.DataFrame(
+        [
+            {
+                "date": "2026-01-02",
+                "open": 10,
+                "high": 11,
+                "low": 9,
+                "close": 10.5,
+                "volume": 2000,
+                "amount": 3000,
+            }
+        ]
+    )
+
+    result = normalize_hk_daily_prices(raw_prices)
+
+    assert len(result) == 1
+    assert result[0].trade_date == date(2026, 1, 2)
+    assert result[0].close == 10.5
+    assert result[0].volume == 2000
+    assert result[0].amount == 3000

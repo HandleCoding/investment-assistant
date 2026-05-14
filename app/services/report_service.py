@@ -2,13 +2,13 @@ from app.domain.analysis import AnalysisSummary
 
 
 class ReportService:
-    def render_a_share_markdown(self, summary: AnalysisSummary) -> str:
+    def render_stock_markdown(self, summary: AnalysisSummary, market_name: str) -> str:
         metrics = summary.metrics
         score = summary.score
         reasons = "\n".join(f"- {reason}" for reason in summary.reasons) or "- 暂无明显积极信号。"
         risks = "\n".join(f"- {risk}" for risk in summary.risks) or "- 暂无明显风险信号。"
 
-        return f"""# {summary.symbol} A 股分析报告
+        return f"""# {summary.symbol} {market_name}股票分析报告
 
 ## 综合结论
 
