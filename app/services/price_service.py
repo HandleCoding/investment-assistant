@@ -6,13 +6,16 @@ from sqlalchemy.orm import Session
 
 from app.data_sources.akshare_client import AkShareClient
 from app.data_sources.normalizers import (
+    fund_nav_to_price_frame,
     normalize_a_share_prices,
     normalize_a_share_tx_prices,
+    normalize_fund_nav,
     normalize_hk_daily_prices,
     price_bars_to_frame,
 )
-from app.database.models import Asset, AssetType, Market, PriceDaily
+from app.database.models import Asset, AssetType, FundNavDaily, Market, PriceDaily
 from app.domain.errors import DataSourceError, NoMarketDataError
+from app.domain.fund_data import FundNavBar
 from app.domain.market_data import PriceBar
 
 
@@ -81,6 +84,33 @@ class PriceService:
 
         return price_bars_to_frame(cached_bars)
 
+    def get_fund_nav_history(
+        self,
+        symbol: str,
+        lookback_days: int = 900,
+    ) -> pd.DataFrame:
+        asset = self._get_or_create_asset(
+            symbol=symbol,
+            market=Market.FUND,
+            asset_type=AssetType.FUND,
+        )
+        end_date = date.today()
+        start_date = end_date - timedelta(days=lookback_days)
+        cached_bars = self._list_cached_nav(asset.id, start_date)
+        if not cached_bars or cached_bars[-1].nav_date < end_date - timedelta(days=7):
+            raw_nav = self.data_client.fetch_open_fund_history(symbol)
+            fetched_bars = [
+                bar for bar in normalize_fund_nav(raw_nav) if start_date <= bar.nav_date <= end_date
+            ]
+            if not fetched_bars:
+                raise NoMarketDataError(f"未获取到 {symbol} 的基金净值数据。")
+            self._upsert_nav(asset.id, fetched_bars)
+            cached_bars = self._list_cached_nav(asset.id, start_date)
+
+        if not cached_bars:
+            raise NoMarketDataError(f"本地没有 {symbol} 的可用基金净值数据。")
+        return fund_nav_to_price_frame(cached_bars)
+
     def _fetch_a_share_bars(
         self,
         symbol: str,
@@ -146,6 +176,43 @@ class PriceService:
             )
             for row in rows
         ]
+
+    def _list_cached_nav(self, asset_id: int, start_date: date) -> list[FundNavBar]:
+        statement = (
+            select(FundNavDaily)
+            .where(FundNavDaily.asset_id == asset_id, FundNavDaily.nav_date >= start_date)
+            .order_by(FundNavDaily.nav_date)
+        )
+        rows = self.session.scalars(statement).all()
+        return [
+            FundNavBar(
+                nav_date=row.nav_date,
+                unit_nav=row.unit_nav,
+                accumulated_nav=row.accumulated_nav,
+                daily_return=row.daily_return,
+            )
+            for row in rows
+        ]
+
+    def _upsert_nav(self, asset_id: int, nav_bars: list[FundNavBar]) -> None:
+        existing_dates = set(
+            self.session.scalars(
+                select(FundNavDaily.nav_date).where(FundNavDaily.asset_id == asset_id)
+            ).all()
+        )
+        for bar in nav_bars:
+            if bar.nav_date in existing_dates:
+                continue
+            self.session.add(
+                FundNavDaily(
+                    asset_id=asset_id,
+                    nav_date=bar.nav_date,
+                    unit_nav=bar.unit_nav,
+                    accumulated_nav=bar.accumulated_nav,
+                    daily_return=bar.daily_return,
+                )
+            )
+        self.session.commit()
 
     def _upsert_prices(self, asset_id: int, price_bars: list[PriceBar], adjust: str) -> None:
         existing_dates = set(

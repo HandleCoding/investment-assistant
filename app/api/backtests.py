@@ -3,9 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.api.schemas import BacktestRunRequest
+from app.api.schemas import BacktestRunRequest, SignalBacktestRunRequest
 from app.database.session import get_session
-from app.domain.backtest import BacktestRequest
+from app.domain.backtest import BacktestRequest, SignalBacktestRequest
 from app.domain.errors import DataSourceError, NoMarketDataError
 from app.services.backtest_service import BacktestService
 
@@ -25,6 +25,21 @@ def run_moving_average_cross(
 ) -> dict[str, object]:
     try:
         return service.run_moving_average_cross(BacktestRequest(**request.model_dump())).to_dict()
+    except NoMarketDataError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except DataSourceError as exc:
+        raise HTTPException(status_code=503, detail=f"行情数据源暂时不可用：{exc}") from exc
+
+
+@router.post("/signal")
+def run_signal_backtest(
+    request: SignalBacktestRunRequest,
+    service: Annotated[BacktestService, Depends(get_backtest_service)],
+) -> dict[str, object]:
+    try:
+        return service.run_signal_holding_period(
+            SignalBacktestRequest(**request.model_dump())
+        ).to_dict()
     except NoMarketDataError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except DataSourceError as exc:

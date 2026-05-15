@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}策略 - 投资助手{% endblock %}
+{% block page_title %}多策略选股选基{% endblock %}
+
+{% block content %}
+<section class="card analysis-card">
+  <div class="section-header">
+    <div>
+      <div class="section-title">策略扫描器</div>
+      <p>基于趋势、突破、低波动相对强度、回撤修复和基金 NAV 趋势策略，对 A 股、港股、基金/ETF 统一排名。</p>
+    </div>
+  </div>
+  <div class="strategy-grid">
+    {% for strategy in strategies %}
+    <article class="strategy-tile">
+      <strong>{{ strategy }}</strong>
+      <span>支持回测验证、入场价、止损价、目标价和持有周期。</span>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid grid-3 section-gap">
+  <article class="card">
+    <div class="section-title">机会推荐</div>
+    <p>综合多策略信号，输出最高评分候选及仓位建议。</p>
+    <code>POST /api/opportunities/rank</code>
+  </article>
+  <article class="card">
+    <div class="section-title">策略扫描</div>
+    <p>单策略或全策略扫描候选标的。</p>
+    <code>POST /api/strategies/scan</code>
+  </article>
+  <article class="card">
+    <div class="section-title">信号回测</div>
+    <p>验证策略信号在历史持有期的表现。</p>
+    <code>POST /api/backtests/signal</code>
+  </article>
+</section>
+
+<section class="grid grid-2 section-gap">
+  <article class="card">
+    <div class="section-title">默认候选池</div>
+    <p>{{ default_symbols }}</p>
+    <p>可通过 API 提交自定义 symbols 列表、market 和 strategy_name。</p>
+  </article>
+  <article class="card">
+    <div class="section-title">月度 10% 收益目标</div>
+    <p>机会推荐 API 会自动对比候选预期上行与月度目标，不达标时给出警告和弹性建议。止损和仓位纪律是底线。</p>
+  </article>
+</section>
+{% endblock %}

@@ -1,6 +1,15 @@
 from fastapi import APIRouter
 
-from app.api import analysis, assets, backtests, candidates, data_management, portfolio
+from app.api import (
+    analysis,
+    assets,
+    backtests,
+    candidates,
+    data_management,
+    opportunity,
+    portfolio,
+    strategies,
+)
 
 router = APIRouter()
 router.include_router(assets.router, prefix="/api/assets", tags=["assets"])
@@ -9,3 +18,5 @@ router.include_router(candidates.router, prefix="/api/candidates", tags=["candid
 router.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 router.include_router(backtests.router, prefix="/api/backtests", tags=["backtests"])
 router.include_router(data_management.router, prefix="/api/data", tags=["data"])
+router.include_router(strategies.router, prefix="/api/strategies", tags=["strategies"])
+router.include_router(opportunity.router, prefix="/api/opportunities", tags=["opportunities"])

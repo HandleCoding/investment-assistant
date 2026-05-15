@@ -75,6 +75,12 @@ class AkShareClient:
         except RequestException as exc:
             raise DataSourceError(f"AkShare 获取港基净值失败：{exc}") from exc
 
+    def fetch_open_fund_history(self, symbol: str) -> pd.DataFrame:
+        try:
+            return ak.fund_open_fund_info_em(symbol=symbol, indicator="单位净值走势")
+        except RequestException as exc:
+            raise DataSourceError(f"AkShare 获取基金净值失败：{exc}") from exc
+
 
 def _a_share_symbol_with_market(symbol: str) -> str:
     if symbol.startswith(("sh", "sz")):

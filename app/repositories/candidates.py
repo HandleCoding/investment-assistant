@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.models import CandidateEntry
 from app.domain.analysis import AnalysisSummary
+from app.domain.strategy import StrategySignal
 
 
 class CandidateRepository:
@@ -36,6 +37,34 @@ class CandidateRepository:
         entry.max_drawdown = _to_float(metrics.get("max_drawdown"))
         entry.reason = reason
         entry.risk = risk
+        entry.status = "WATCHING"
+        self.session.flush()
+        return entry
+
+    def upsert_from_signal(
+        self,
+        asset_id: int,
+        generated_at: date,
+        signal: StrategySignal,
+    ) -> CandidateEntry:
+        entry = self.session.scalar(
+            select(CandidateEntry).where(
+                CandidateEntry.asset_id == asset_id,
+                CandidateEntry.generated_at == generated_at,
+            )
+        )
+        if entry is None:
+            entry = CandidateEntry(asset_id=asset_id, generated_at=generated_at)
+            self.session.add(entry)
+
+        entry.score = signal.score
+        entry.conclusion = signal.action
+        entry.return_20d = _to_float(signal.metrics.get("return_20d"))
+        entry.max_drawdown = _to_float(
+            signal.metrics.get("max_drawdown") or signal.metrics.get("max_drawdown_120d")
+        )
+        entry.reason = f"{signal.strategy}: {signal.reasons[0]}"
+        entry.risk = signal.risks[0] if signal.risks else "暂无明显风险"
         entry.status = "WATCHING"
         self.session.flush()
         return entry

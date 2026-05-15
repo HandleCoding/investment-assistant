@@ -37,3 +37,25 @@ class BacktestRunRequest(BaseModel):
     initial_cash: float = Field(default=100_000, gt=0)
     fast_window: int = Field(default=20, gt=1)
     slow_window: int = Field(default=60, gt=2)
+
+
+class SignalBacktestRunRequest(BaseModel):
+    symbol: str
+    market: str = "A_SHARE"
+    strategy_name: str = "trend_momentum_quality"
+    rebalance_days: int = Field(default=20, gt=0)
+    holding_days: int = Field(default=20, gt=0)
+    initial_cash: float = Field(default=100_000, gt=0)
+
+
+class StrategyScanRequest(BaseModel):
+    symbols: list[str] = Field(default_factory=lambda: ["000001", "603288", "510300"])
+    market: str = "A_SHARE"
+    strategy_name: str | None = None
+    limit: int = Field(default=20, gt=0, le=100)
+
+
+class OpportunityRankRequest(BaseModel):
+    symbols: list[str] = Field(default_factory=lambda: ["000001", "603288", "510300"])
+    market: str = "A_SHARE"
+    max_positions: int = Field(default=5, gt=0, le=20)

@@ -7,6 +7,7 @@ from app.database.models import (
     Asset,
     BacktestRun,
     CandidateEntry,
+    FundNavDaily,
     PortfolioPosition,
     PriceDaily,
 )
@@ -25,6 +26,7 @@ def db_session():
         tables=[
             Asset.__table__,
             PriceDaily.__table__,
+            FundNavDaily.__table__,
             CandidateEntry.__table__,
             PortfolioPosition.__table__,
             BacktestRun.__table__,

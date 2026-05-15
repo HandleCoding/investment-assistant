@@ -7,6 +7,7 @@ from app.repositories.assets import AssetRepository
 from app.repositories.candidates import CandidateRepository, today
 from app.services.analysis_service import AnalysisService
 from app.services.price_service import normalize_hk_symbol
+from app.services.strategy_scan_service import StrategyScanService
 
 
 class CandidatePoolService:
@@ -15,6 +16,7 @@ class CandidatePoolService:
         self.assets = AssetRepository(session)
         self.candidates = CandidateRepository(session)
         self.analysis_service = analysis_service or AnalysisService(session)
+        self.strategy_scan_service = StrategyScanService(session)
 
     def generate(self, rule: CandidateRule | None = None) -> CandidatePoolSnapshot:
         rule = rule or CandidateRule(
@@ -25,19 +27,38 @@ class CandidatePoolService:
         )
         generated_at = today()
         entries = []
-        for raw_symbol in rule.symbols:
+        for market in rule.markets or [Market.A_SHARE.value]:
+            market_symbols = [
+                symbol
+                for symbol in rule.symbols
+                if self._market_for_symbol(symbol, rule.markets) == market
+            ]
+            if not market_symbols:
+                continue
             try:
-                summary = self._analyze(raw_symbol, rule.markets)
+                result = self.strategy_scan_service.scan(
+                    market_symbols,
+                    market=market,
+                    limit=len(market_symbols) * 4,
+                )
             except (DataSourceError, NoMarketDataError):
                 continue
-            if not self._passes_rule(summary.metrics, summary.score.total, rule):
-                continue
-
-            market = self._market_for_symbol(raw_symbol, rule.markets)
-            symbol = normalize_hk_symbol(raw_symbol) if market == Market.HK.value else raw_symbol
-            asset = self.assets.get_or_create(symbol, market, AssetType.STOCK.value, name=symbol)
-            entry = self.candidates.upsert_from_analysis(asset.id, generated_at, summary)
-            entries.append(self._to_snapshot(entry))
+            for signal in result.signals:
+                if not self._passes_rule(signal.metrics, signal.score, rule):
+                    continue
+                symbol = (
+                    normalize_hk_symbol(signal.symbol)
+                    if market == Market.HK.value
+                    else signal.symbol
+                )
+                asset = self.assets.get_or_create(
+                    symbol,
+                    market,
+                    AssetType.STOCK.value,
+                    name=symbol,
+                )
+                entry = self.candidates.upsert_from_signal(asset.id, generated_at, signal)
+                entries.append(self._to_snapshot(entry))
 
         self.session.commit()
         if not entries:

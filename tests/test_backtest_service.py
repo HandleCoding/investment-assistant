@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 import pandas as pd
 
-from app.domain.backtest import BacktestRequest
+from app.domain.backtest import BacktestRequest, SignalBacktestRequest
 from app.services.backtest_service import BacktestService
 from app.services.price_service import PriceService
 
@@ -40,4 +40,23 @@ def test_backtest_service_runs_ma_cross(db_session) -> None:
 
     assert result.symbol == "000001"
     assert result.final_value > 10000
+    assert result.trade_count >= 1
+
+
+def test_backtest_service_runs_signal_holding_period(db_session) -> None:
+    price_service = PriceService(db_session, data_client=FakeBacktestDataClient())
+    service = BacktestService(db_session, price_service=price_service)
+
+    result = service.run_signal_holding_period(
+        SignalBacktestRequest(
+            symbol="000001",
+            strategy_name="trend_momentum_quality",
+            rebalance_days=20,
+            holding_days=10,
+            initial_cash=10000,
+        )
+    )
+
+    assert result.symbol == "000001"
+    assert result.final_value >= 10000
     assert result.trade_count >= 1

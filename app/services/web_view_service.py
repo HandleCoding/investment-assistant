@@ -12,10 +12,12 @@ from app.domain.web import (
     MetricCard,
     PortfolioViewModel,
     PositionItem,
+    StrategyViewModel,
 )
 from app.services.candidate_service import CandidatePoolService
 from app.services.data_management_service import DataManagementService
 from app.services.portfolio_service import PortfolioService
+from app.strategies.modules import default_strategy_modules
 
 
 class DashboardViewService:
@@ -76,6 +78,14 @@ class BacktestViewService:
             default_initial_cash="100000",
             default_fast_window=20,
             default_slow_window=60,
+        )
+
+
+class StrategyViewService:
+    def build(self) -> StrategyViewModel:
+        return StrategyViewModel(
+            strategies=[strategy.name for strategy in default_strategy_modules()],
+            default_symbols="000001,603288,510300,002475,300750,600519",
         )
 
 

@@ -14,6 +14,16 @@ class BacktestRequest:
 
 
 @dataclass(frozen=True)
+class SignalBacktestRequest:
+    symbol: str
+    market: str = "A_SHARE"
+    strategy_name: str = "trend_momentum_quality"
+    rebalance_days: int = 20
+    holding_days: int = 20
+    initial_cash: float = 100_000
+
+
+@dataclass(frozen=True)
 class BacktestTrade:
     trade_date: date
     action: str

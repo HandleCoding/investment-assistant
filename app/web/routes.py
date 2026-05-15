@@ -16,6 +16,7 @@ from app.services.web_view_service import (
     DashboardViewService,
     DataManagementViewService,
     PortfolioViewService,
+    StrategyViewService,
 )
 
 router = APIRouter()
@@ -98,6 +99,16 @@ def backtests(request: Request) -> HTMLResponse:
         request,
         "backtests.html",
         {"active_page": "backtests", **context},
+    )
+
+
+@router.get("/strategies", response_class=HTMLResponse)
+def strategies(request: Request) -> HTMLResponse:
+    context = StrategyViewService().build().to_context()
+    return templates.TemplateResponse(
+        request,
+        "strategies.html",
+        {"active_page": "strategies", **context},
     )
 
 

@@ -86,6 +86,15 @@ class BacktestViewModel:
 
 
 @dataclass(frozen=True)
+class StrategyViewModel:
+    strategies: list[str]
+    default_symbols: str
+
+    def to_context(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class DataManagementViewModel:
     summary_cards: list[MetricCard]
     coverage: list[dict[str, object]]

@@ -60,6 +60,13 @@ def test_backtests_page_loads() -> None:
     assert "策略回测" in response.text
 
 
+def test_strategies_page_loads() -> None:
+    response = TestClient(app).get("/strategies")
+
+    assert response.status_code == 200
+    assert "多策略选股选基" in response.text
+
+
 def test_data_management_page_loads() -> None:
     response = TestClient(app).get("/data")
 
