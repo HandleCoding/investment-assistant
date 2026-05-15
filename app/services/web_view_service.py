@@ -17,6 +17,7 @@ from app.domain.web import (
 from app.services.candidate_service import CandidatePoolService
 from app.services.data_management_service import DataManagementService
 from app.services.portfolio_service import PortfolioService
+from app.services.weekly_pick_service import WeeklyPickService
 from app.strategies.modules import default_strategy_modules
 
 
@@ -28,6 +29,14 @@ class DashboardViewService:
     def build(self) -> DashboardViewModel:
         portfolio = self.portfolio.snapshot()
         candidates = self.candidates.list_latest(limit=8).entries
+        pick_summary = ""
+        pick_warnings: list[str] = []
+        try:
+            pick = WeeklyPickService(self.candidates.session).generate()
+            pick_summary = pick.backtest_summary
+            pick_warnings = pick.warnings
+        except Exception:
+            pick_summary = "本周推荐生成需要行情数据支持"
         return DashboardViewModel(
             market_cards=[
                 MetricCard("上证指数", "待接入", "行情源扩展", "neutral"),
@@ -38,6 +47,8 @@ class DashboardViewService:
             portfolio_cards=_portfolio_summary_cards(portfolio),
             alerts=[AlertItem("组合纪律", item) for item in portfolio.alerts],
             candidates=[_candidate_item(item) for item in candidates],
+            weekly_pick_summary=pick_summary,
+            weekly_pick_warnings=pick_warnings,
         )
 
 

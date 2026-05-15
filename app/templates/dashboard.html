@@ -46,6 +46,28 @@
 <section class="card section-gap">
   <div class="section-header">
     <div>
+      <div class="section-title">本周策略推荐</div>
+      <p>多策略信号综合排名 + 信号回测验证。</p>
+    </div>
+    <a class="link-button" href="/api/weekly-picks">JSON</a>
+  </div>
+  {% if weekly_pick_summary %}
+  <div class="alert-item info" style="margin-bottom:8px">
+    <strong>回测摘要</strong>
+    <span>{{ weekly_pick_summary }}</span>
+  </div>
+  {% endif %}
+  {% for warning in weekly_pick_warnings %}
+  <div class="alert-item warning" style="margin-bottom:8px">
+    <strong>注意</strong>
+    <span>{{ warning }}</span>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="card section-gap">
+  <div class="section-header">
+    <div>
       <div class="section-title">今日候选观察</div>
       <p>先作为观察池，不等同于买入建议。</p>
     </div>

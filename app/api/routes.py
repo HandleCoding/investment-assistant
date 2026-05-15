@@ -9,6 +9,7 @@ from app.api import (
     opportunity,
     portfolio,
     strategies,
+    weekly_pick,
 )
 
 router = APIRouter()
@@ -20,3 +21,4 @@ router.include_router(backtests.router, prefix="/api/backtests", tags=["backtest
 router.include_router(data_management.router, prefix="/api/data", tags=["data"])
 router.include_router(strategies.router, prefix="/api/strategies", tags=["strategies"])
 router.include_router(opportunity.router, prefix="/api/opportunities", tags=["opportunities"])
+router.include_router(weekly_pick.router, prefix="/api/weekly-picks", tags=["weekly-picks"])

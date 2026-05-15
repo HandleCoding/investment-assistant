@@ -48,6 +48,8 @@ class DashboardViewModel:
     portfolio_cards: list[MetricCard]
     alerts: list[AlertItem]
     candidates: list[CandidateItem]
+    weekly_pick_summary: str
+    weekly_pick_warnings: list[str]
 
     def to_context(self) -> dict[str, object]:
         return asdict(self)
