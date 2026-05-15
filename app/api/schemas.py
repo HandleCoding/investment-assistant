@@ -59,3 +59,13 @@ class OpportunityRankRequest(BaseModel):
     symbols: list[str] = Field(default_factory=lambda: ["000001", "603288", "510300"])
     market: str = "A_SHARE"
     max_positions: int = Field(default=5, gt=0, le=20)
+
+
+class TradeOrderRequest(BaseModel):
+    symbol: str
+    market: str = "A_SHARE"
+    action: str = "BUY"
+    quantity: float = Field(gt=0)
+    price: float = Field(gt=0)
+    trade_date: date
+    reason: str | None = None

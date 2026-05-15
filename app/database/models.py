@@ -153,3 +153,18 @@ class BacktestRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     asset: Mapped[Asset] = relationship()
+
+
+class TradeRecord(Base):
+    __tablename__ = "trade_records"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id"), index=True)
+    action: Mapped[str] = mapped_column(String(16))
+    quantity: Mapped[float] = mapped_column(Float)
+    price: Mapped[float] = mapped_column(Float)
+    trade_date: Mapped[date] = mapped_column(Date, index=True)
+    reason: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+
+    asset: Mapped[Asset] = relationship()

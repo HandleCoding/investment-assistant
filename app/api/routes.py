@@ -9,6 +9,7 @@ from app.api import (
     opportunity,
     portfolio,
     strategies,
+    trading,
     weekly_pick,
 )
 
@@ -22,3 +23,4 @@ router.include_router(data_management.router, prefix="/api/data", tags=["data"])
 router.include_router(strategies.router, prefix="/api/strategies", tags=["strategies"])
 router.include_router(opportunity.router, prefix="/api/opportunities", tags=["opportunities"])
 router.include_router(weekly_pick.router, prefix="/api/weekly-picks", tags=["weekly-picks"])
+router.include_router(trading.router, prefix="/api/trading", tags=["trading"])

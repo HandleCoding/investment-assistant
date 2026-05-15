@@ -10,6 +10,7 @@ from app.database.models import (
     FundNavDaily,
     PortfolioPosition,
     PriceDaily,
+    TradeRecord,
 )
 from app.database.session import Base
 
@@ -30,6 +31,7 @@ def db_session():
             CandidateEntry.__table__,
             PortfolioPosition.__table__,
             BacktestRun.__table__,
+            TradeRecord.__table__,
         ],
     )
     session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
