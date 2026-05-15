@@ -118,26 +118,32 @@ class PriceService:
         end_date: date,
         adjust: str,
     ) -> list[PriceBar]:
+        errors: list[str] = []
         try:
             raw_prices = self.data_client.fetch_a_share_history(
-                symbol,
-                start_date,
-                end_date,
-                adjust,
+                symbol, start_date, end_date, adjust,
             )
-            return normalize_a_share_prices(raw_prices)
-        except DataSourceError as primary_error:
-            try:
-                raw_prices = self.data_client.fetch_a_share_history_tx(
-                    symbol,
-                    start_date,
-                    end_date,
-                    adjust,
-                )
-                return normalize_a_share_tx_prices(raw_prices)
-            except DataSourceError as fallback_error:
-                message = f"{primary_error}；备用腾讯源也失败：{fallback_error}"
-                raise DataSourceError(message) from fallback_error
+            bars = normalize_a_share_prices(raw_prices)
+            if bars:
+                return bars
+            errors.append("东方财富源返回空数据")
+        except DataSourceError as exc:
+            errors.append(str(exc))
+        except Exception as exc:
+            errors.append(f"东方财富源异常: {exc}")
+        try:
+            raw_prices = self.data_client.fetch_a_share_history_tx(
+                symbol, start_date, end_date, adjust,
+            )
+            bars = normalize_a_share_tx_prices(raw_prices)
+            if bars:
+                return bars
+            errors.append("腾讯源返回空数据")
+        except DataSourceError as exc:
+            errors.append(str(exc))
+        except Exception as exc:
+            errors.append(f"腾讯源异常: {exc}")
+        raise DataSourceError("；".join(errors))
 
     def _get_or_create_asset(self, symbol: str, market: Market, asset_type: AssetType) -> Asset:
         statement = select(Asset).where(Asset.symbol == symbol, Asset.market == market.value)

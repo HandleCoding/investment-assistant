@@ -34,17 +34,23 @@ class TrendMomentumStrategy(StrategyModule):
         reasons: list[str] = []
         risks: list[str] = []
         close = float(latest["close"])
-        if ret_60 > 0.08:
-            score += 25
-            reasons.append("近 60 日趋势收益较强")
-        if ret_120 > 0.12:
+        if ret_20 > 0.03:
+            score += 15
+            reasons.append("近 20 日短期动量改善")
+        if ret_60 > 0.04:
             score += 20
+            reasons.append("近 60 日趋势收益向好")
+        if ret_120 > 0.08:
+            score += 15
             reasons.append("近 120 日中期动量占优")
         if close > ma60 > ma120:
             score += 25
             reasons.append("价格位于 60/120 日均线上方")
-        if ma20 > ma60:
+        elif close > ma60:
             score += 15
+            reasons.append("价格站上 60 日均线")
+        if ma20 > ma60:
+            score += 10
             reasons.append("短期均线结构保持强势")
         if drawdown > -0.18:
             score += 10
@@ -52,13 +58,13 @@ class TrendMomentumStrategy(StrategyModule):
         if volatility < 0.35:
             score += 5
 
-        if ret_20 > 0.25:
+        if ret_20 > 0.30:
             score -= 15
             risks.append("近 20 日涨幅过快，追高风险上升")
-        if drawdown < -0.28:
+        if drawdown < -0.30:
             score -= 20
             risks.append("阶段最大回撤较深")
-        if volatility > 0.45:
+        if volatility > 0.50:
             score -= 10
             risks.append("年化波动率偏高")
 
@@ -101,12 +107,18 @@ class BreakoutVolumeStrategy(StrategyModule):
         reasons: list[str] = []
         risks: list[str] = []
         if close > previous_high:
-            score += 45
+            score += 40
             reasons.append("收盘价突破近 60 日高点")
+        elif close > previous_high * 0.97:
+            score += 20
+            reasons.append("接近 60 日高点，突破在即")
         if 1.2 <= volume_ratio <= 3.5:
             score += 25
             reasons.append("成交量温和放大确认突破")
-        if ret_20 > 0.03:
+        elif volume_ratio > 1.0:
+            score += 10
+            reasons.append("成交量有所放大")
+        if ret_20 > 0.02:
             score += 15
             reasons.append("短期动量同步改善")
         if drawdown > -0.2:
@@ -314,13 +326,13 @@ def _signal(
 ) -> StrategySignal:
     bounded_score = max(0, min(100, round(score, 2)))
     action = "观察"
-    if bounded_score >= 75:
+    if bounded_score >= 70:
         action = "强关注"
-    elif bounded_score >= 60:
+    elif bounded_score >= 50:
         action = "可观察"
-    elif bounded_score < 40:
+    elif bounded_score < 35:
         action = "暂不考虑"
-    confidence = "高" if bounded_score >= 75 else "中" if bounded_score >= 55 else "低"
+    confidence = "高" if bounded_score >= 70 else "中" if bounded_score >= 45 else "低"
     return StrategySignal(
         strategy=strategy,
         symbol=symbol,

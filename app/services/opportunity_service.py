@@ -61,7 +61,7 @@ class OpportunityService:
         position_size = self._position_size(score, max_positions, downside_risk)
         all_reasons = [f"[{s.strategy}] {r}" for s in signals for r in s.reasons]
         all_risks = list({r for s in signals for r in s.risks})
-        action = "强关注" if score >= 75 else "可观察" if score >= 55 else "暂不考虑"
+        action = "强关注" if score >= 70 else "可观察" if score >= 50 else "暂不考虑"
         holding = max(signal.holding_days for signal in signals) if signals else 20
         return OpportunityRecommendation(
             symbol=symbol,
@@ -83,8 +83,12 @@ class OpportunityService:
     def _combined_score(self, signals: list[StrategySignal]) -> float:
         if not signals:
             return 0
-        weight_sum = sum(signal.score for signal in signals)
-        return round(weight_sum / len(signals), 2)
+        best = max(signal.score for signal in signals)
+        avg_others = 0.0
+        others = [signal.score for signal in signals if signal.score != best]
+        if others:
+            avg_others = sum(others) / len(others)
+        return round(best * 0.7 + avg_others * 0.3, 2)
 
     def _position_size(
         self,
